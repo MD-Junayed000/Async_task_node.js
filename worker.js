@@ -8,7 +8,7 @@ const REDIS_URL = process.env.REDIS_URL || "redis://redis:6379";
 const QUEUE = "tasks";
 const DLX = "dlx";
 const DLQ = "tasks.dlq";
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 3; // Based upon user
 
 // retry‐connect helper
 async function connectRabbitWithRetry(url, retries = 10, delay = 5000) {
@@ -36,7 +36,7 @@ async function main() {
   const conn = await connectRabbitWithRetry(RABBIT_URL);
   const ch = await conn.createChannel();
 
-  // ◂◂◂ throttle to 1 un-acked message at a time ▶▶▶
+  // throttle to 1 un-acked message at a time
   await ch.prefetch(1);
 
   // declare dead‐letter exchange + queue
@@ -52,7 +52,6 @@ async function main() {
 
   console.log("→ RabbitMQ ready, forking workers…");
 
-  // consume
   ch.consume(
     QUEUE,
     async (msg) => {

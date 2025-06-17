@@ -37,7 +37,7 @@ async function connectRabbitWithRetry(url, maxAtt = 10, delayMs = 5000) {
 }
 
 async function main() {
-  // ─── EXPRESS + SOCKET.IO SETUP ─────────────────────────────
+  //  EXPRESS + SOCKET.IO SETUP
   const app = express();
   const server = http.createServer(app);
   const io = socketIo(server);
@@ -47,7 +47,7 @@ async function main() {
   app.set("view engine", "ejs");
   app.use("/css", express.static(path.join(__dirname, "public/css")));
 
-  // ─── REDIS PUB/SUB FOR LIVE UPDATES ────────────────────────
+  // REDIS PUB/SUB FOR LIVE UPDATES
   const redisSub = createClient({ url: REDIS_URL });
   const redisPub = createClient({ url: REDIS_URL });
   await redisSub.connect();
@@ -57,7 +57,7 @@ async function main() {
     io.emit("task_update", JSON.parse(msg));
   });
 
-  // ─── RABBITMQ SETUP ────────────────────────────────────────
+  //  RABBITMQ SETUP
   const conn = await connectRabbitWithRetry(RABBIT_URL);
   const ch = await conn.createChannel();
 
@@ -72,7 +72,7 @@ async function main() {
     arguments: { "x-dead-letter-exchange": DLX },
   });
 
-  // ─── ROUTES ────────────────────────────────────────────────
+  //  ROUTES
   app.get("/", (_req, res) => {
     // kick the page off with no flashes, no inline results
     res.render("index", {
@@ -163,7 +163,7 @@ async function main() {
       flash: [
         {
           type: "success",
-          msg: `Task queued (ID=${id}).  Watch the live chart below…`,
+          msg: `Task queued (ID=${id}).  Monitor Task via Redis Commander....`,
         },
       ],
       reverseResult,
@@ -171,7 +171,7 @@ async function main() {
     });
   });
 
-  // ─── START HTTP + WS ───────────────────────────────────────
+  // START HTTP + WS
   server.listen(5000, "0.0.0.0", () =>
     console.log("🚀 Listening on http://localhost:5000")
   );
