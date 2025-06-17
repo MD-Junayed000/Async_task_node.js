@@ -16,6 +16,7 @@ services:
   worker:
     build: .
     command: npm run worker
+    #scale: 3
     environment:
       RABBIT_URL: amqp://rabbitmq:5672
       REDIS_URL: redis://redis:6379

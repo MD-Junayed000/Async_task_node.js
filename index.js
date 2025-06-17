@@ -20,7 +20,10 @@ async function connectRabbitWithRetry(url, maxAtt = 10, delayMs = 5000) {
   let attempt = 0;
   while (attempt < maxAtt) {
     try {
-      const conn = await amqp.connect(url);
+      //const conn = await amqp.connect(url);
+      const conn = await amqp.connect(RABBIT_URL, {
+        clientProperties: { connection_name: `worker-${process.pid}` },
+      });
       console.log("🐰 Connected to RabbitMQ");
       return conn; // ← make sure to return here!
     } catch (err) {

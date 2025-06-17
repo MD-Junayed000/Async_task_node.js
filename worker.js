@@ -36,7 +36,7 @@ async function main() {
   const conn = await connectRabbitWithRetry(RABBIT_URL);
   const ch = await conn.createChannel();
 
-  // throttle to 1 un-acked message at a time
+  // only work on one message at a time (fair dispatch)
   await ch.prefetch(1);
 
   // declare dead‐letter exchange + queue
@@ -90,6 +90,8 @@ async function main() {
       await redisPub.hSet(`task:${id}`, {
         status,
         result: JSON.stringify(result),
+        timestamp: Date.now(),
+        workerPid: process.pid,
       });
 
       // 4) broadcast “completed” or “failed”
