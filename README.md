@@ -154,7 +154,8 @@ async-node/
 
 ## Poridhi Lab Setup
 1. Access the application through load balancer:
-At first  load the system following the instructions as in local machine and checking if all the ports are forwarded![image](https://github.com/user-attachments/assets/7e400c90-6b9e-4787-8416-12f10e29657c)
+At first  load the system following the instructions as in local machine and checking if all the ports are forwarded!![image](https://github.com/user-attachments/assets/c154f7d6-4b58-4e79-a5ba-7261f1689b54)
+
 
 
 
@@ -172,7 +173,7 @@ At first  load the system following the instructions as in local machine and che
 3. Create load balancer and configure with your application's IP and port in Poridhi lab:
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/aec14ae4-a1d6-405b-aa52-e710c5a9ece5" alt="Screenshot 2025-06-03 155900" width="600">
+  <img src="https://github.com/user-attachments/assets/5b7681e6-ec05-4945-9663-ca0e0c32842e" alt="Screenshot 2025-06-03 155900" width="600">
 </div>
 
 ![image](https://github.com/user-attachments/assets/f7786750-1b00-4e37-86a1-34744d5b7cb4)
@@ -196,7 +197,8 @@ Domain name for a load balancer in the Poridhi lab environment (For 5000 port):h
 
  Open the load balancer for port 5555 in the poridhi lab environment:https://67aa3ccddb2c69e7e975ceff-lb-751.bm-southeast.lab.poridhi.io/tasks
 
-  ![Screenshot 2025-06-03 192629](https://github.com/user-attachments/assets/2dbf9954-abf7-4611-af9f-8e9be87efc2b)
+ ![image](https://github.com/user-attachments/assets/f018bf32-e32a-42cf-8672-6b492db58410)
+
 
 * View task history, retries, failures
 * Inspect live workers and system load
@@ -204,7 +206,15 @@ Domain name for a load balancer in the Poridhi lab environment (For 5000 port):h
 ### 3. Inspect RabbitMQ queue depth in RabbitMQ Management UI.
 Default credentials: guest/guest
 -Monitor queues, exchanges, consumers and connections
-![Screenshot 2025-06-03 192604](https://github.com/user-attachments/assets/66837fde-a699-4a30-afab-009b97812658)
+![image](https://github.com/user-attachments/assets/5375b2ff-f01a-478a-9cd2-cffac62e59f4)
+![image](https://github.com/user-attachments/assets/11458d9d-66eb-4369-967d-063da81fd392)
+![image](https://github.com/user-attachments/assets/cb7b51fe-828b-486a-a5ab-6a833489e338)
+
+![image](https://github.com/user-attachments/assets/570f3c0a-2b6c-44eb-ad65-3ec81ae757ee)
+
+
+
+
 
 
 
