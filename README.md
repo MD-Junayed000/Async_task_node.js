@@ -133,14 +133,13 @@ async-node/
 1. **Clone repository**
 
    ```bash
-   git clone https://github.com/your-username/async-node.git](https://github.com/MD-Junayed000/Async_task_node.js.git
+   git clone https://github.com/MD-Junayed000/Async_task_node.js.git
    cd Async_task_node.js
    ```
 
 2. **Build & start services**
 
    ```bash
-   docker-compose build api worker
    docker-compose up --build
    ```
 
