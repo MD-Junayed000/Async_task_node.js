@@ -69,7 +69,7 @@ As the worker processes a job, it publishes its own updates into Redis: first `{
 ## Project Structure
 
 ```
-async-node/
+Lab-1/
 ├── Dockerfile            # Node.js image definition
 ├── docker-compose.yml    # Multi-service setup
 ├── package.json          # NPM dependencies & scripts
@@ -141,6 +141,7 @@ async-node/
    ```bash
    git clone https://github.com/MD-Junayed000/Async_task_node.js.git
    cd Async_task_node.js
+   cd Lab-1
    ```
 
 2. **Build & start services**
