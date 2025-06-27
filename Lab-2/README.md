@@ -16,7 +16,7 @@ All EC2s are Dockerized and orchestrated using `docker-compose` profiles.
 ##  Architecture Diagram
 
 <div align="center">
-  <img src="assets/Service.svg" alt="Implementation Diagram" width="800">
+  <img src="pic/multi.svg" alt="Implementation Diagram" width="800">
 </div>
 
 
