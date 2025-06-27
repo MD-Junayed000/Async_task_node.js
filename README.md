@@ -9,7 +9,7 @@ A demonstration project showing how to offload work from an Express API into bac
 This project is divided into 2 Labs, each Lab shows various implementation with techonology tools:
 
 - **Lab-1-Async-Tasks**: System Design in Local machine and Poridhi lab implementation ([Read more](README.md))
-- **Lab-2-Multi-EC2**:  Pulumi-Driven AWS Multi-EC2 instance deployment ([Read more](https://github.com/MD-Junayed000/async-tasks/blob/main/Lab-3-Multi-EC2/README.md))
+- **Lab-2-Multi-EC2**:  Pulumi-Driven AWS Multi-EC2 instance deployment ([Read more](https://github.com/poridhioss/Async_task_node.js/blob/main/Lab-2/README.md))
 
 
 
