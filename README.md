@@ -1,5 +1,5 @@
 
-#  Asynchronous Task Processing implemented in  Node.js, RabbitMQ & Redis
+#  Asynchronous Task Processing implemented in  Node.js
 
 A demonstration project showing how to offload work from an Express API into background workers using RabbitMQ, track progress in Redis, and stream live updates to the browser via Socket.IO.
 
