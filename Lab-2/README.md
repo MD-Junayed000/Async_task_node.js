@@ -24,7 +24,7 @@ All EC2s are Dockerized and orchestrated using `docker-compose` profiles.
 
 ## How the System is Structured
 
-###  Infrastructure (via `async-stack-Multi-EC2/__main__.py`)
+###  Infrastructure (via `Asynchronous-Task-Processing-implemented-in-Node.js-for-Multi-EC2/__main__.py`)
 
 1. **Virtual Private Cloud (VPC) – `10.0.0.0/16`**
    A dedicated Virtual Private Cloud is created to host all components of the system within a secure, logically isolated AWS network.
@@ -69,29 +69,28 @@ A total of six EC2 instances are launched, each assigned a specific responsibili
    - `redis-ec2`
 
 **The setup should show like this in AWS console:**
-![image](https://github.com/user-attachments/assets/cb4186f3-9521-40f3-87b2-c06be97af759)
-![image](https://github.com/user-attachments/assets/20a03bca-2618-4709-b06b-5e694e7eb23b)
+![image](https://github.com/user-attachments/assets/c31c31b8-0092-4e71-a949-4ae36f783f9a)
+
+![image](https://github.com/user-attachments/assets/5d1253a1-b321-42c5-82c9-15403f1b213c)
 
 
-9.**Expose Public IPs for Access**
-- Outputs the public IPs of all EC2s after deployment.
-- Can directly visit:
-  •	http://<flask-ip>:5000 → Flask UI
-  •	http://<flower-ip>:5555 → Flower
-  •	http://<rabbit-ip>:15672 → RabbitMQ dashboard
 
 
----
+### 🐳 Docker Application (`Asynchronous-Task-Processing-implemented-in-Node.js-for-Multi-EC2/docker-compose.yml`)
 
-### 🐳 Docker Application (`async-tasks/docker-compose.yml`)
+6-node EC2 stack—one for each service in your Node.js async system:
 
-Each service has its own profile:
+1. api-ec2 (Express + Socket.IO)
 
-- `flask`: Flask app and task submission UI (port 5000)
-- `rabbitmq`: Broker + management UI (5672, 15672)
-- `redis`: Stores Celery task results (6379)
-- `celery`: Worker consuming tasks (`-Q celery_see`)
-- `flower`: Monitoring dashboard for Celery tasks (5555)
+2. rabbitmq-ec2 (RabbitMQ broker + management UI)
+
+3. redis-ec2 (Redis + pub/sub + Redis-Commander)
+
+4. worker1-ec2 (Node.js worker)
+
+5. worker2-ec2 (Node.js worker)
+
+6. redisui-ec2 (Live Redis Commander UI)
 
 ---
 ###  Optimized docker-compose.yml with profiles so each instance only spins up its assigned service:(Use profiles to isolate services)
@@ -266,7 +265,7 @@ pip install -r requirements.txt
 
 Replace __main__.py with this:
 
-***here the modified  docker-compose.yml are pushed into a new repo https://github.com/MD-Junayed000/async-tasks-multi-EC2 and clone directly into the __main__.py.***
+***here the modified  docker-compose.yml are pushed into a new repo https://github.com/MD-Junayed000/Asynchronous-Task-Processing-implemented-in-Node.js-for-Multi-EC2.git and clone directly into the __main__.py.***
 
 ```bash
 
@@ -274,163 +273,144 @@ import pulumi
 import pulumi_aws as aws
 import os
 
-# Ubuntu 22.04 AMI
-ami = aws.ec2.get_ami(most_recent=True,
+# Configuration
+AMI_ID = aws.ec2.get_ami(
+    most_recent=True,
     owners=["099720109477"],
     filters=[{"name": "name", "values": ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]}]
-)
+).id
 
-# VPC & Networking
-vpc = aws.ec2.Vpc("vpc",
+# VPC
+vpc = aws.ec2.Vpc("async-node-vpc",
     cidr_block="10.0.0.0/16",
     enable_dns_support=True,
     enable_dns_hostnames=True,
-    tags={"Name": "async-vpc"}
+    tags={"Name": "async-node-vpc"}
 )
 
 # Subnet
-subnet = aws.ec2.Subnet("subnet",
+subnet = aws.ec2.Subnet("async-node-subnet",
     vpc_id=vpc.id,
     cidr_block="10.0.1.0/24",
     map_public_ip_on_launch=True,
-    tags={"Name": "async-subnet"}
+    tags={"Name": "async-node-subnet"}
 )
 
 # Internet Gateway
-igw = aws.ec2.InternetGateway("igw",
+igw = aws.ec2.InternetGateway("async-node-igw",
     vpc_id=vpc.id,
-    tags={"Name": "async-igw"}
+    tags={"Name": "async-node-igw"}
 )
 
 # Route Table
-route_table = aws.ec2.RouteTable("route-table",
+route_table = aws.ec2.RouteTable("async-node-rt",
     vpc_id=vpc.id,
-    routes=[{
-        "cidr_block": "0.0.0.0/0",
-        "gateway_id": igw.id,
-    }],
-    tags={"Name": "async-rt"}
+    routes=[{"cidr_block": "0.0.0.0/0", "gateway_id": igw.id}],
+    tags={"Name": "async-node-rt"}
 )
 
 # Route Table Association
-aws.ec2.RouteTableAssociation("route-table-assoc",
+aws.ec2.RouteTableAssociation("async-node-rt-assoc",
     subnet_id=subnet.id,
-    route_table_id=route_table.id,
-    opts=pulumi.ResourceOptions(additional_secret_outputs=["route_table_id"])
+    route_table_id=route_table.id
 )
 
-
 # Security Group
-sec_group = aws.ec2.SecurityGroup("secgroup",
+sec_group = aws.ec2.SecurityGroup("async-node-sg",
     vpc_id=vpc.id,
-    description="Allow required ports",
+    description="Allow ports for async-node services",
     ingress=[
         {"protocol": "tcp", "from_port": 22, "to_port": 22, "cidr_blocks": ["0.0.0.0/0"]},
         {"protocol": "tcp", "from_port": 5000, "to_port": 5000, "cidr_blocks": ["0.0.0.0/0"]},
-        {"protocol": "tcp", "from_port": 5555, "to_port": 5555, "cidr_blocks": ["0.0.0.0/0"]},
         {"protocol": "tcp", "from_port": 5672, "to_port": 5672, "cidr_blocks": ["0.0.0.0/0"]},
         {"protocol": "tcp", "from_port": 15672, "to_port": 15672, "cidr_blocks": ["0.0.0.0/0"]},
         {"protocol": "tcp", "from_port": 6379, "to_port": 6379, "cidr_blocks": ["0.0.0.0/0"]},
+        {"protocol": "tcp", "from_port": 8081, "to_port": 8081, "cidr_blocks": ["0.0.0.0/0"]},
     ],
     egress=[{"protocol": "-1", "from_port": 0, "to_port": 0, "cidr_blocks": ["0.0.0.0/0"]}],
-    tags={"Name": "async-secgroup"}
+    tags={"Name": "async-node-sg"}
 )
 
-# SSH Key
-key_pair = aws.ec2.KeyPair("ssh-key",public_key=open("/root/code/id_rsa.pub").read())
+# SSH Key Pair
+key_pair = aws.ec2.KeyPair("async-node-key",
+    public_key=open("/root/code/id_rsa.pub").read()
+)
 
-# startup script
+# Startup Script Generator
 def make_script(service, rabbitmq_ip="", redis_ip=""):
-    # Determine which additional profiles are needed
-    extra_profiles = ""
-    if service == "flask" or service == "flower" or service == "celery":
-       extra_profiles = "--profile rabbitmq --profile redis"
-
+    profiles = f"--profile rabbitmq --profile redis --profile {service}" if service in ["api", "worker", "redisui"] else f"--profile {service}"
     return f"""#!/bin/bash
 export DEBIAN_FRONTEND=noninteractive
-
-# Install Docker + Compose v2
 apt update -y
 apt install -y docker.io git curl
 systemctl start docker
 usermod -aG docker ubuntu
-sleep 30
-
-# Install Docker Compose v2
+sleep 20
 curl -L https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
-
-# Setup project
 cd /home/ubuntu
-git clone https://github.com/MD-Junayed000/async-tasks-multi-EC2.git
-cd async-tasks-multi-EC2
-
-# Inject broker and redis IPs
-sed -i 's|<BROKER_IP>|{rabbitmq_ip}|g' app/celeryconfig.py
-sed -i 's|<REDIS_IP>|{redis_ip}|g' app/celeryconfig.py
-
-# Logging everything
-echo "==== STARTUP LOG for {service} ====" >> /home/ubuntu/startup.log
-docker-compose {extra_profiles} --profile {service} build >> /home/ubuntu/startup.log 2>&1
-docker-compose {extra_profiles} --profile {service} up -d >> /home/ubuntu/startup.log 2>&1
+git clone https://github.com/MD-Junayed000/Asynchronous-Task-Processing-implemented-in-Node.js-for-Multi-EC2.git
+cd Asynchronous-Task-Processing-implemented-in-Node.js-for-Multi-EC2
+sed -i 's|<RABBITMQ_IP>|{rabbitmq_ip}|g' docker-compose.yml
+sed -i 's|<REDIS_IP>|{redis_ip}|g' docker-compose.yml
+echo \"==== STARTUP LOG for {service} ====" >> /home/ubuntu/startup.log
+docker-compose {profiles} --profile {service} build >> /home/ubuntu/startup.log 2>&1
+docker-compose {profiles} --profile {service} up -d >> /home/ubuntu/startup.log 2>&1
 """
 
-
-
-
-#  EC2 instance function
+# EC2 Launch Helper
 def create_instance(name, script):
     return aws.ec2.Instance(name,
-        ami=ami.id,
+        ami=AMI_ID,
         instance_type="t2.micro",
         subnet_id=subnet.id,
-        associate_public_ip_address=True, ### request a public IP address assigned by AWS during launch
+        associate_public_ip_address=True,
         vpc_security_group_ids=[sec_group.id],
         key_name=key_pair.key_name,
         user_data=script,
         tags={"Name": name}
     )
 
-# 1. RabbitMQ EC2
+# RabbitMQ EC2
 rabbitmq_script = make_script("rabbitmq")
 rabbitmq = create_instance("rabbitmq-ec2", rabbitmq_script)
 
-# 2. Redis EC2
+# Redis EC2
 redis_script = make_script("redis")
 redis = create_instance("redis-ec2", redis_script)
 
-# 3. Flask EC2
-flask_script = pulumi.Output.all(rabbitmq.public_ip, redis.public_ip).apply(
-    lambda ips: make_script("flask", ips[0], ips[1])
+# API EC2
+api_script = pulumi.Output.all(rabbitmq.public_ip, redis.public_ip).apply(
+    lambda ips: make_script("api", ips[0], ips[1])
 )
-flask = create_instance("flask-ec2", flask_script)
+api = create_instance("api-ec2", api_script)
 
-# 4. Worker1 EC2
+# Worker1 EC2
 worker1_script = pulumi.Output.all(rabbitmq.public_ip, redis.public_ip).apply(
-    lambda ips: make_script("celery", ips[0], ips[1])
+    lambda ips: make_script("worker", ips[0], ips[1])
 )
 worker1 = create_instance("worker1-ec2", worker1_script)
 
-# 5. Worker2 EC2
+# Worker2 EC2
 worker2_script = pulumi.Output.all(rabbitmq.public_ip, redis.public_ip).apply(
-    lambda ips: make_script("celery", ips[0], ips[1])
+    lambda ips: make_script("worker", ips[0], ips[1])
 )
 worker2 = create_instance("worker2-ec2", worker2_script)
 
-# 6. Flower EC2
-flower_script = pulumi.Output.all(rabbitmq.public_ip, redis.public_ip).apply(
-    lambda ips: make_script("flower", ips[0], ips[1])
+# Redis UI EC2
+redisui_script = pulumi.Output.all(rabbitmq.public_ip, redis.public_ip).apply(
+    lambda ips: make_script("redisui", ips[0], ips[1])
 )
-flower = create_instance("flower-ec2", flower_script)
+redisui = create_instance("redisui-ec2", redisui_script)
+
 
 # Outputs
-pulumi.export("Flask Public IP", flask.public_ip)
-pulumi.export("RabbitMQ IP", rabbitmq.public_ip)
-pulumi.export("Redis IP", redis.public_ip)
+pulumi.export("API Public IP", api.public_ip)
+pulumi.export("RabbitMQ Public IP", rabbitmq.public_ip)
+pulumi.export("Redis Public IP", redis.public_ip)
 pulumi.export("Worker1 IP", worker1.public_ip)
 pulumi.export("Worker2 IP", worker2.public_ip)
-pulumi.export("Flower IP", flower.public_ip)
-
+pulumi.export("RedisUI Public IP", redisui.public_ip)
 
 ```
 
@@ -468,17 +448,17 @@ pulumi up --yes
 ```
 you should see a output like this:
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/bff9f865-29d4-448d-a6b4-0974ea00bdf4" alt="image" >
+  <img src="https://github.com/user-attachments/assets/156566b6-aa64-4c0e-a498-336e49ea4c9d" alt="image" >
 </div>
 
 
 After ~2–3 minutes you’ll have five public IPs—point your browser at:
 
-* API: http://<API_IP>:5000
+* ***API: http://<API_IP>:5000***
 
-* RabbitMQ UI: http://<RABBIT_IP>:15672 (guest/guest)
+* ***RabbitMQ UI: http://<RABBIT_IP>:15672 (guest/guest)***
 
-* Redis-Commander: http://<REDIS_IP>:8081
+* ***Redis-Commander: http://<REDIS_IP>:8081***
 
 Your two worker nodes will automatically connect, pull tasks from RabbitMQ, publish to Redis, and emit Socket.IO events back through the API node.
 
@@ -520,30 +500,8 @@ docker ps                             # Get container ID
 docker logs <container_id_or_name>   # See task logs
 ```
 you should see a output like this:
-![image](https://github.com/user-attachments/assets/8fa47795-7c50-44b9-944b-7ffc51f409c0)
-
-then to query it inside run the command:
-```bash
-docker exec -it <name> redis-cli
-```
-![image](https://github.com/user-attachments/assets/6716637e-990f-48c6-872d-1ab7618e18f8)
-
-
-
-
-## Internals — Task Flow
-<div align="center">
-  <img src="assets/Multi-flow.jpg" alt="Implementation Diagram" width="300" height="400">
-</div>
-
-
-•	RabbitMQ: Handles queues
-
-•	Celery: Executes tasks
-
-•	Redis: Stores task states & results
-
-•	Flower: Visual task monitoring
+![image](https://github.com/user-attachments/assets/bafc1bb5-39c6-406c-8809-082619a00a78)
+![image](https://github.com/user-attachments/assets/7ab59f65-b273-49c4-8cb4-df7a9c6fbeef)
 
 
 
@@ -552,7 +510,7 @@ docker exec -it <name> redis-cli
 - **Pulumi provisions** a full cloud network and injects broker/result IPs into each EC2.
 - **Each EC2** builds only its required service with Docker Compose profiles.
 - **Workers connect** to RabbitMQ on a separate instance and store results in Redis on another instance.
-- **Flask web UI** submits tasks and displays results using Redis.
+- **API web UI** Submit a task on the API UI and watch “Live Task Updates” stream in via Socket.IO.
 
 
 
@@ -560,20 +518,4 @@ docker exec -it <name> redis-cli
 ```bash
 pulumi destroy --yes
 ```
-
-
----
-
-##  Summary
-
- This project showcases:
-- **Distributed Celery architecture**
-- **Full automation** with Pulumi (no manual AWS console clicks)
-- **Service isolation** (1 EC2 per service)
-- **Monitoring** via Flower
-- **Scalable and modular async task processing**
-
-
-
-
-
+Pulumi will tear down the VPC, all EC2s, and related networking.
